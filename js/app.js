@@ -6,14 +6,61 @@ function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-var GameObject = function(x, y, sprite) {
-	this.x = x;
-	this.y = y;
+var gridWidth = 101;
+var gridHeight = 83;
+
+var GameObject = function(sprite) {
 	this.sprite = sprite;
+	this.x = 0;
+	this.y = 0;
+	this.xGrid = 0;
+	this.yGrid = 0;
+	this.yOffset = -23;
+	this.collisionRectXOffset = 0;
+	this.collisionRectYOffset = 0;
+	this.collisionRectWidth = 101;
+	this.collisionRectHeight = 171;
 };
 
 GameObject.prototype.render = function() {
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
+	
+	if (debug) {
+		ctx.beginPath();
+		ctx.rect(this.x + this.collisionRectXOffset, this.y + this.collisionRectYOffset, this.collisionRectWidth, this.collisionRectHeight);
+		ctx.lineWidth = 5;
+		ctx.strokeStyle = 'red';
+		ctx.stroke();
+		ctx.closePath();
+	}
+};
+
+GameObject.prototype.setGridPosition = function(xGrid, yGrid) {
+	this.xGrid = xGrid;
+	this.yGrid = yGrid;
+	this.updateGridPosition();
+};
+
+GameObject.prototype.setXGridPosition = function(xGrid) {
+	this.xGrid = xGrid;
+	this.updateGridPosition();
+};
+
+GameObject.prototype.setYGridPosition = function(yGrid) {
+	this.yGrid = yGrid;
+	this.updateGridPosition();
+};
+
+GameObject.prototype.updateGridPosition = function() {
+	this.x = this.xGrid * gridWidth;
+	this.y = this.yGrid * gridHeight + this.yOffset;
+};
+
+GameObject.prototype.isCollision = function(gameObject) {
+	return (Math.abs((this.x + this.collisionRectXOffset) - (gameObject.x + gameObject.collisionRectXOffset)) * 2 <
+		(this.collisionRectWidth + gameObject.collisionRectWidth)) &&
+		(Math.abs((this.y + this.collisionRectYOffset) - (gameObject.y + gameObject.collisionRectYOffset)) * 2 <
+		(this.collisionRectHeight + gameObject.collisionRectHeight));	
 };
 
 
@@ -24,9 +71,13 @@ var Enemy = function() {
 
     // The image/sprite for our enemies, this uses
     // a helper we've provided to easily load images
-    GameObject.call(this, 0, 0, 'images/enemy-bug.png');
+    GameObject.call(this, 'images/enemy-bug.png');
 	this.setRandomStartPosition();
 	this.setRandomSpeed();
+	this.collisionRectXOffset = 5;
+	this.collisionRectYOffset = 87.5;
+	this.collisionRectWidth = 91;
+	this.collisionRectHeight = 55;
 };
 
 Enemy.prototype = Object.create(GameObject.prototype);
@@ -40,15 +91,14 @@ Enemy.prototype.update = function(dt) {
     // all computers.
 	this.x += this.speed * dt;
 	
-	if (this.x > 5 * 101) {
+	if (this.x > 5 * gridWidth) {
 		this.setRandomStartPosition();
 		this.setRandomSpeed();
 	}
 };
 
 Enemy.prototype.setRandomStartPosition = function() {
-	this.x = -1 * 101;
-	this.y = getRandomInt(1, 3) * 83 - 20;
+	this.setGridPosition(-1, getRandomInt(1, 3));
 };
 
 Enemy.prototype.setRandomSpeed = function() {
@@ -59,51 +109,48 @@ Enemy.prototype.setRandomSpeed = function() {
 // This class requires an update(), render() and
 // a handleInput() method.
 var Player = function() {
-	GameObject.call(this, 0, 0, 'images/char-boy.png');
-	this.resetToStartPosition();	
+	GameObject.call(this, 'images/char-boy.png');
+	this.resetToStartPosition();
+	this.collisionRectXOffset = 22.5;
+	this.collisionRectYOffset = 87.5;
+	this.collisionRectWidth = 55;
+	this.collisionRectHeight = 55;
 };
 
 Player.prototype = Object.create(GameObject.prototype);
 Player.prototype.constructor = Player;
 
 Player.prototype.resetToStartPosition = function() {
-	this.xGrid = 2;
-	this.yGrid = 5;
-	this.updateGridPosition();
+	this.setGridPosition(2, 5);
 };
 
 Player.prototype.update = function() {
-	if (this.yGrid <= 0) {
+	if (this.yGrid <= 0) 
 		this.resetToStartPosition();
-	}
 };
 
 Player.prototype.handleInput = function(key) {
 	switch (key) {
 		case 'left':
 			if (this.xGrid > 0)
-				this.xGrid--;
+				this.setXGridPosition(this.xGrid - 1);
 			break;
 		case 'right':
 			if (this.xGrid < 4)
-				this.xGrid++;
+				this.setXGridPosition(this.xGrid + 1);
 			break;
 		case 'up':
 			if (this.yGrid > 0)
-				this.yGrid--;
+				this.setYGridPosition(this.yGrid - 1);
 			break;
 		case 'down':
 			if (this.yGrid < 5)
-				this.yGrid++;
+				this.setYGridPosition(this.yGrid + 1);
 			break;
 	}
-	this.updateGridPosition();
 };
 
-Player.prototype.updateGridPosition = function() {
-	this.x = this.xGrid * 101;
-	this.y = this.yGrid * 83 - 20;
-};
+
 
 // Now instantiate your objects.
 // Place all enemy objects in an array called allEnemies
@@ -115,7 +162,7 @@ for (var i = 0; i < numEnemies; i++) {
 }
 
 var player = new Player();
-
+var debug = false;
 
 // This listens for key presses and sends the keys to your
 // Player.handleInput() method. You don't need to modify this.
