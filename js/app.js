@@ -1,14 +1,20 @@
+// Function that returns a random float between min and max
+// From StackOverflow website
 function getRandomArbitrary(min, max) {
     return Math.random() * (max - min) + min;
 }
 
+// Function that returns a random integer between min and max
+// From StackOverflow website
 function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+// Variables holding the grid width and height of the cells in the level
 var gridWidth = 101;
 var gridHeight = 83;
 
+// Base class for the game objects
 var GameObject = function(sprite) {
 	this.sprite = sprite;
 	this.x = 0;
@@ -22,9 +28,11 @@ var GameObject = function(sprite) {
 	this.collisionRectHeight = 171;
 };
 
+// Method to render game objects
 GameObject.prototype.render = function() {
     ctx.drawImage(Resources.get(this.sprite), this.x, this.y);
 	
+    // If the debug flag is set draw the collision rectangle in red over the image
 	if (debug) {
 		ctx.beginPath();
 		ctx.rect(this.x + this.collisionRectXOffset, this.y + this.collisionRectYOffset, this.collisionRectWidth, this.collisionRectHeight);
@@ -35,27 +43,33 @@ GameObject.prototype.render = function() {
 	}
 };
 
+// Method to set the grid position of the game object
 GameObject.prototype.setGridPosition = function(xGrid, yGrid) {
 	this.xGrid = xGrid;
 	this.yGrid = yGrid;
 	this.updateGridPosition();
 };
 
+// Method to set the X grid position of the game object
 GameObject.prototype.setXGridPosition = function(xGrid) {
 	this.xGrid = xGrid;
 	this.updateGridPosition();
 };
 
+// Method to set the Y grid position of the game object
 GameObject.prototype.setYGridPosition = function(yGrid) {
 	this.yGrid = yGrid;
 	this.updateGridPosition();
 };
 
+// Method to update the actual x, y pixel coordinates based on the x, y grid coordinates
 GameObject.prototype.updateGridPosition = function() {
 	this.x = this.xGrid * gridWidth;
 	this.y = this.yGrid * gridHeight + this.yOffset;
 };
 
+// Method that returns whether there is a collision with another game object passed as a parameter
+// Adapted from a post on the StackOverflow website
 GameObject.prototype.isCollision = function(gameObject) {
 	return (Math.abs((this.x + this.collisionRectXOffset) - (gameObject.x + gameObject.collisionRectXOffset)) * 2 <
 		(this.collisionRectWidth + gameObject.collisionRectWidth)) &&
@@ -65,6 +79,7 @@ GameObject.prototype.isCollision = function(gameObject) {
 
 
 // Enemies our player must avoid
+// Enemies are a sub-class of GameObject
 var Enemy = function() {
     // Variables applied to each of our instances go here,
     // we've provided one for you to get started
@@ -91,16 +106,20 @@ Enemy.prototype.update = function(dt) {
     // all computers.
 	this.x += this.speed * dt;
 	
+    // If the enemy is completely off the edge of the level
+    // respawn it with a random start position and random speed
 	if (this.x > 5 * gridWidth) {
 		this.setRandomStartPosition();
 		this.setRandomSpeed();
 	}
 };
 
+// Method to set a random start position on one of the three streets for the enemy
 Enemy.prototype.setRandomStartPosition = function() {
 	this.setGridPosition(-1, getRandomInt(1, 3));
 };
 
+// Method to set the random speed of the enemy
 Enemy.prototype.setRandomSpeed = function() {
 	this.speed = getRandomArbitrary(100, 500);
 };
@@ -108,6 +127,7 @@ Enemy.prototype.setRandomSpeed = function() {
 // Now write your own player class
 // This class requires an update(), render() and
 // a handleInput() method.
+// The Player class is a sub-class of GameObject
 var Player = function() {
 	GameObject.call(this, 'images/char-boy.png');
 	this.resetToStartPosition();
@@ -120,15 +140,20 @@ var Player = function() {
 Player.prototype = Object.create(GameObject.prototype);
 Player.prototype.constructor = Player;
 
+// Method to reset the player to its start position at the bottom middle of the level
 Player.prototype.resetToStartPosition = function() {
 	this.setGridPosition(2, 5);
 };
 
+// Update Method for the Player
 Player.prototype.update = function() {
+    // If the player has reached the water, reset it to its start position
 	if (this.yGrid <= 0) 
 		this.resetToStartPosition();
 };
 
+// Method to handle input to move the player.
+// If the input does not move the player out of the level, moves the player to a new location
 Player.prototype.handleInput = function(key) {
 	switch (key) {
 		case 'left':
