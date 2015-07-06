@@ -96,15 +96,15 @@ var Engine = (function(global) {
         });
         player.update();
     }
-	
+    
     // Function that checks if the player is colliding with the enemies
-	function checkCollisions() {
-		allEnemies.forEach(function(enemy) {
+    function checkCollisions() {
+        allEnemies.forEach(function(enemy) {
             // If the player is colliding with an enemy, reset it to its start position.
             if (player.isCollision(enemy))
-				player.resetToStartPosition();
+                player.resetToStartPosition();
         });
-	}
+    }
 
     /* This function initially draws the "game level", it will then call
      * the renderEntities function. Remember, this function is called every
